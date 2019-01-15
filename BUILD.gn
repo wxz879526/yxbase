@@ -15,6 +15,7 @@ static_library("yxsdk") {
     "//ui/display:display",
     "//url:url",
     "//third_party/icu:icu",
+    "//third_party/libxml",
   ]
 }
 
