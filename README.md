@@ -4,12 +4,14 @@
 * yxbase使用Chromium的GN + Ninja方式进行构建和编译（目前支持Win/Mac平台，暂未生成其他系统的GN工具到buildtools文件夹）
 
 ### yxbase库编译
-* 安装depot_tools(包含GN和Ninja工具)，放在yxbase根目录，compile.bat脚本可自动识别。提供了一份Windows可直接用的depot_tools(https://pan.baidu.com/s/1qYr4T68 提取码：btad)
+* 安装depot_tools(包含GN和Ninja工具)，修改compile.bat里面的depot_tools 路径
+* 添加环境变量 GYP_MSVS_OVERRIDE_PATH  指向vs2017的安装路径 C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise
+* 添加环境变量 WINDOWSSDKDIR 指向本地SDK路径 D:\Windows Kits\10
 * 运行compile.bat
 * 使用args.gn文件内的编译配置
 * 默认输出在out目录
 * vs命令行运行create_yxbase_run_in_vs_cmd.bat脚本合并最终的yxbase.lib
-* 在Win10 + VS2015 Update3编译/验证/测试通过
+* 在Win10 + VS2017 编译/验证/测试通过
 
 ### yxbase库使用
 **1. 在GN工程使用**
