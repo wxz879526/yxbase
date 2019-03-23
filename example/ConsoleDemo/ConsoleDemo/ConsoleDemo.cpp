@@ -10,15 +10,16 @@
 #include "base/run_loop.h"
 #include "base/location.h"
 #include "base/bind.h"
+#include "base/command_line.h"
 #include "base/callback.h"
 
+#include "CSystemInfoDemo.h"
 
-int main()
+int TaskDemo()
 {
 	base::AtExitManager exit_manager;
-
 	int duration_seconds = 0;
-	if (!base::StringToInt("10",  &duration_seconds))
+	if (!base::StringToInt("10", &duration_seconds))
 	{
 		std::cout << "Error in StringToInt" << std::endl;
 		return -1;
@@ -34,7 +35,17 @@ int main()
 	main_loop.task_runner()->PostDelayedTask(FROM_HERE, std::move(task), duration);
 	main_loop.task_runner()->PostDelayedTask(FROM_HERE, run_loop.QuitClosure(), duration);
 	run_loop.Run();
+
+	return  0;
+}
+
+int main(int argc, char* argv[])
+{
+	base::CommandLine::Init(argc, argv);
+	CSystemInfoDemo sysDemo;
+	sysDemo.DoWork();
 	std::cout << "main exit" << std::endl;
+	system("Pause");
 	return 0;
 }
 
