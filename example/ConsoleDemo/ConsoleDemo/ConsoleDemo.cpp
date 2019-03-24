@@ -14,6 +14,7 @@
 #include "base/callback.h"
 
 #include "CSystemInfoDemo.h"
+#include "CThreadDemo.h"
 
 int TaskDemo()
 {
@@ -42,8 +43,14 @@ int TaskDemo()
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
+	base::AtExitManager exit_manager;
+
 	CSystemInfoDemo sysDemo;
 	sysDemo.DoWork();
+
+	CThreadDemo threadDemo;
+	threadDemo.DoWork();
+
 	std::cout << "main exit" << std::endl;
 	system("Pause");
 	return 0;
