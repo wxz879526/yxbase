@@ -95,6 +95,29 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libcore.lib;advapi32.lib;
+comdlg32.lib;
+dbghelp.lib;
+delayimp.lib;
+dnsapi.lib
+;gdi32.lib;
+kernel32.lib
+;msimg32.lib
+;odbc32.lib
+;odbccp32.lib;
+ole32.lib;
+oleaut32.lib;
+psapi.lib;
+shell32.lib;
+shlwapi.lib;
+user32.lib;
+usp10.lib;
+uuid.lib;
+version.lib;
+wininet.lib;
+winmm.lib;
+winspool.lib;
+ws2_32.lib;Powrprof.lib;Setupapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -132,7 +155,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>..\..\..\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>yxbase.lib;advapi32.lib;
+      <AdditionalDependencies>libcore.lib;advapi32.lib;
 comdlg32.lib;
 dbghelp.lib;
 delayimp.lib;

@@ -1,19 +1,19 @@
-### yxbase库介绍
+### libcore库介绍
 * Chromium Base库是一套十分强大的且跨平台的开发库，提供了（内存/消息循环/线程/文件/字符串/文字编码/json/时间/定时器……）等开发中经常会使用到的功能实现，由Google完成开发，性能及稳定性值得信任。
-* yxbase基于Chromium 60.0.3112.90版本抽离base库
-* yxbase使用Chromium的GN + Ninja方式进行构建和编译（目前支持Win/Mac平台，暂未生成其他系统的GN工具到buildtools文件夹）
+* libcore基于Chromium 60.0.3112.90版本抽离base库
+* libcore使用Chromium的GN + Ninja方式进行构建和编译（目前支持Win/Mac平台，暂未生成其他系统的GN工具到buildtools文件夹）
 
-### yxbase库编译
+### libcore库编译
 * 安装depot_tools(包含GN和Ninja工具)，修改compile.bat里面的depot_tools 路径
 * 添加环境变量 GYP_MSVS_OVERRIDE_PATH  指向vs2017的安装路径 C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise
 * 添加环境变量 WINDOWSSDKDIR 指向本地SDK路径 D:\Windows Kits\10
 * 运行compile.bat
 * 使用args.gn文件内的编译配置
 * 默认输出在out目录
-* vs命令行运行create_yxbase_run_in_vs_cmd.bat脚本合并最终的yxbase.lib
+* vs命令行运行create_libcore_run_in_vs_cmd.bat脚本合并最终的libcore.lib
 * 在Win10 + VS2017 编译/验证/测试通过
 
-### yxbase库使用
+### libcore库使用
 **1. 在GN工程使用**
 ```
  executable("example") {
@@ -32,7 +32,7 @@
 
 **2. 在VS工程使用**
 
-* 包含目录：yxbase path
+* 包含目录：libcore path
 * 链接库文件：
 
 ```

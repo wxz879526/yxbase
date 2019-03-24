@@ -9,6 +9,6 @@ call D:\code\depot_tools\python D:\code\depot_tools\gn.py gen .\out --ide=vs
 call D:\code\depot_tools\python D:\code\depot_tools\gn.py args .\out
 
 :: compiling
-call D:\code\depot_tools\ninja -C .\out yxsdk
+call D:\code\depot_tools\ninja -C .\out libcore
 
 pause
