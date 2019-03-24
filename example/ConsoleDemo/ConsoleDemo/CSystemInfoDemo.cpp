@@ -72,4 +72,13 @@ void CSystemInfoDemo::DoWork()
 	nScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
 	std::cout << "NumberOfProcessors: " << base::SysInfo::NumberOfProcessors() << std::endl;
+	std::cout << "AmountOfPhysicalMemoryMB: " << base::SysInfo::AmountOfPhysicalMemoryMB() << std::endl;
+	std::cout << "OperatingSystemName: " << base::SysInfo::OperatingSystemName() << std::endl;
+	std::cout << "OperatingSystemVersion: " << base::SysInfo::OperatingSystemVersion() << std::endl;
+	std::cout << "CPUModelName: " << base::SysInfo::CPUModelName() << std::endl;
+	std::cout << "screen_scale: " << screen_scale << std::endl;
+	std::cout << "screen size: " << screen_size.width() << std::endl;
+	std::cout << "screen height: " << screen_size.height() << std::endl;
+	std::cout << "screen size by screen scale: " << screen_size.width() * screen_scale << std::endl;
+	std::cout << "screen height by screen scale: " << screen_size.height() * screen_scale << std::endl;
 }
