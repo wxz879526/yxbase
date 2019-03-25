@@ -122,7 +122,7 @@ class BASE_EXPORT ConditionVariable {
 #endif
 
 #if DCHECK_IS_ON() && (defined(OS_WIN) || defined(OS_POSIX))
-  base::Lock* const user_lock_;  // Needed to adjust shadow lock state on wait.
+  base::Lock* const user_lock_ = nullptr;  // Needed to adjust shadow lock state on wait.
 #endif
 
   DISALLOW_COPY_AND_ASSIGN(ConditionVariable);
