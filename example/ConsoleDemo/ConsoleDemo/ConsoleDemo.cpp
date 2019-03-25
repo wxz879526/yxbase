@@ -12,13 +12,13 @@
 #include "base/bind.h"
 #include "base/command_line.h"
 #include "base/callback.h"
+#include "base/logging.h"
 
 #include "CSystemInfoDemo.h"
 #include "CThreadDemo.h"
 
 int TaskDemo()
 {
-	base::AtExitManager exit_manager;
 	int duration_seconds = 0;
 	if (!base::StringToInt("10", &duration_seconds))
 	{
@@ -44,6 +44,19 @@ int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
 	base::AtExitManager exit_manager;
+
+	logging::LoggingSettings settings;
+	settings.log_file = L"example.log";
+	bool success = logging::InitLogging(settings);
+
+	if (success)
+	{
+		logging::SetLogItems(true, true, true, false);
+	}
+
+	LOG(INFO) << "info.log";
+	LOG(ERROR) << "error.log";
+	LOG(WARNING) << "warning.log";
 
 	CSystemInfoDemo sysDemo;
 	sysDemo.DoWork();
