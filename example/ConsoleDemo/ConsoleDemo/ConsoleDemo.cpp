@@ -17,6 +17,8 @@
 #include "CSystemInfoDemo.h"
 #include "CThreadDemo.h"
 
+#include "testing/gtest/include/gtest/gtest.h"
+
 int TaskDemo()
 {
 	int duration_seconds = 0;
@@ -57,6 +59,9 @@ int main(int argc, char* argv[])
 	LOG(INFO) << "info.log";
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
+
+	testing::InitGoogleTest(&argc, argv);
+	RUN_ALL_TESTS();
 
 	CSystemInfoDemo sysDemo;
 	sysDemo.DoWork();
