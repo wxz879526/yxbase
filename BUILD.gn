@@ -16,6 +16,7 @@ static_library("libcore") {
     "//url:url",
     "//third_party/icu:icu",
     "//third_party/libxml",
+    "//third_party/googletest:libgtest",
   ]
 }
 
