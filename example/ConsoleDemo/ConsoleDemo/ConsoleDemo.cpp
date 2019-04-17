@@ -7,6 +7,7 @@
 #include "base/at_exit.h"
 #include "base/strings/string_number_conversions.h"
 #include "base/message_loop/message_loop.h"
+#include "base/observer_list_threadsafe.h"
 #include "base/run_loop.h"
 #include "base/location.h"
 #include "base/bind.h"
@@ -71,6 +72,32 @@ private:
 };
 
 class Disrupter : public Foo {
+public:
+	Disrupter(base::ObserverList<Foo>*list, Foo* doomed, bool remove_self)
+		: list_(list)
+		, doomed_(doomed)
+		, remove_self_(remove_self) {}
+
+	Disrupter(base::ObserverList<Foo>*list, Foo* doomed)
+		: Disrupter(list, doomed, false) {}
+
+	Disrupter(base::ObserverList<Foo>*list, bool remove_self)
+		: Disrupter(list, nullptr, remove_self) {}
+
+	~Disrupter() override {}
+
+	void Observe(int x) override
+	{
+		if (remove_self_)
+			list_->RemoveObserver(this);
+		if (doomed_)
+			list_->RemoveObserver(doomed_);
+	}
+
+	void SetDoomed(Foo *doomed)
+	{
+		doomed_ = doomed;
+	}
 
 private:
 	base::ObserverList<Foo>* list_;
@@ -78,6 +105,126 @@ private:
 	bool remove_self_;
 };
 
+template<typename ObserverListType>
+class AddInObserve : public Foo {
+public:
+	explicit AddInObserve(ObserverListType* observer_list)
+		: observer_list(observer_list), to_add_() {}
+
+	void SetToAdd(Foo* to_add)
+	{
+		to_add_ = to_add;
+	}
+
+	void Observe(int x) override
+	{
+		if (to_add_) {
+			observer_list->AddObserver(to_add_);
+			to_add_ = nullptr;
+		}
+	}
+
+	ObserverListType *observer_list;
+	Foo* to_add_;
+};
+
+static const int kThreadRunTime = 2000;
+
+class AddRemoveThread : public base::PlatformThread::Delegate, public Foo 
+{
+public:
+	AddRemoveThread(base::ObserverListThreadSafe<Foo>* list, bool bNotify)
+		: list_(list)
+		, loop_(nullptr)
+		, in_list_(false)
+		, start_(base::Time::Now())
+		, count_observes(0)
+		, count_addtask_(0)
+		, do_notifies_(bNotify)
+		, weak_factory_(this)
+	{}
+
+	~AddRemoveThread() override {}
+
+	void ThreadMain() override
+	{
+		loop_ = new base::MessageLoop();
+		loop_->task_runner()->PostTask(FROM_HERE, 
+			base::BindOnce(&AddRemoveThread::AddTask, weak_factory_.GetWeakPtr()));
+		base::RunLoop().Run();
+		delete loop_;
+		loop_ = reinterpret_cast<base::MessageLoop*>(0xdeadbeef);
+		delete this;
+	}
+
+	void AddTask()
+	{
+		count_addtask_++;
+
+		if ((base::Time::Now() - start_).InMilliseconds() > kThreadRunTime)
+		{
+			VLOG(1) << "Done";
+			return;
+		}
+
+		if (!in_list_)
+		{
+			list_->AddObserver(this);
+			in_list_ = true;
+		}
+
+		if (do_notifies_)
+		{
+			list_->Notify(FROM_HERE, &Foo::Observe, 10);
+		}
+
+		loop_->task_runner()->PostTask(FROM_HERE,
+			base::BindOnce(&AddRemoveThread::AddTask, weak_factory_.GetWeakPtr()));
+	}
+
+	void Quit()
+	{
+		loop_->task_runner()->PostTask(FROM_HERE, base::MessageLoop::QuitWhenIdleClosure());
+	}
+
+	void Observe(int x) override
+	{
+		count_observes++;
+		DCHECK(in_list_);
+		EXPECT_EQ(loop_, base::MessageLoop::current());
+
+		list_->RemoveObserver(this);
+		in_list_ = false;
+	}
+
+private:
+	base::ObserverListThreadSafe<Foo>* list_;
+	base::MessageLoop* loop_;
+	bool in_list_;
+
+	base::Time start_;
+
+	int count_observes;
+	int count_addtask_;
+	bool do_notifies_;
+
+	base::WeakPtrFactory<AddRemoveThread> weak_factory_;
+};
+
+class CDemoThreadObj : public base::PlatformThread::Delegate
+{
+public:
+	void ThreadMain() override
+	{
+		DWORD dw = 0;
+		while (dw < 30)
+		{
+			std::cout << dw << std::endl;
+			++dw;
+			base::PlatformThread::Sleep(base::TimeDelta::FromSeconds(1));
+		}
+	}
+};
 
 int main(int argc, char* argv[])
 {
@@ -99,6 +246,12 @@ int main(int argc, char* argv[])
 
 	testing::InitGoogleTest(&argc, argv);
 	RUN_ALL_TESTS();
+
+	auto pDelegate = new CDemoThreadObj();
+	DCHECK(pDelegate);
+	base::PlatformThreadHandle h;
+	base::PlatformThread::Create(0, pDelegate, &h);
+	base::PlatformThread::Join(h);
 
 	CSystemInfoDemo sysDemo;
 	sysDemo.DoWork();
