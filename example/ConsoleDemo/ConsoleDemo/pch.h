@@ -11,5 +11,6 @@
 
 // TODO: add headers that you want to pre-compile here
 #define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
 
 #endif //PCH_H

@@ -20,6 +20,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "base/threading/thread.h"
+#include "URLRequestContextGetter.h"
+
 int TaskDemo()
 {
 	int duration_seconds = 0;
@@ -226,6 +229,11 @@ public:
 	}
 };
 
+bool FetchUrl(const std::string &url, URLRequestContextGetter *getter, std::string *response)
+{
+	return SyncUrlFetcher(GURL(url), getter, response).Fetch();
+}
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
@@ -243,6 +251,16 @@ int main(int argc, char* argv[])
 	LOG(INFO) << "info.log";
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
+
+	base::Thread io_thread("io thread");
+	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
+	CHECK(io_thread.StartWithOptions(options));
+
+	URLRequestContextGetter *context_getter = new URLRequestContextGetter(io_thread.task_runner());
+
+	std::string response;
+	FetchUrl("http://www.baidu.com", context_getter, &response);
+	std::cout << "Url response: " << response << std::endl;
 
 	testing::InitGoogleTest(&argc, argv);
 	RUN_ALL_TESTS();

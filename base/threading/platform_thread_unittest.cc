@@ -28,7 +28,7 @@ class TrivialThread : public PlatformThread::Delegate {
   TrivialThread() : run_event_(WaitableEvent::ResetPolicy::MANUAL,
                                WaitableEvent::InitialState::NOT_SIGNALED) {}
 
-  void ThreadMain() override { run_event_.Signal(); }
+  virtual void ThreadMain() override { run_event_.Signal(); }
 
   WaitableEvent& run_event() { return run_event_; }
 

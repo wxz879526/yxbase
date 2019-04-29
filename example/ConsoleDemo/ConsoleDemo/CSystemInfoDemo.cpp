@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "CSystemInfoDemo.h"
-#include <ShellScalingApi.h>
 #include "base/sys_info.h"
 #include "ui/display/screen.h"
 #include "ui/display/display.h"
