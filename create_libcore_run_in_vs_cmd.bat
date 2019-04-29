@@ -1,6 +1,7 @@
 lib.exe /out:libcore.lib ^
 out\obj\third_party\libxml\libxml2.lib ^
 out\obj\net\http_server.lib ^
+out\obj\net\constants\trace_constants.obj ^
 out\obj\net\net.lib ^
 out\obj\url\url_lib.lib ^
 out\obj\ui\display\display.lib ^
