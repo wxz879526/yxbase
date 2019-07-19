@@ -20,6 +20,9 @@
 
 #include "testing/gtest/include/gtest/gtest.h"
 
+#include "base/task_scheduler/task_scheduler.h"
+#include "base/task_scheduler/post_task.h"
+
 #include "base/threading/thread.h"
 #include "URLRequestContextGetter.h"
 
@@ -234,6 +237,21 @@ bool FetchUrl(const std::string &url, URLRequestContextGetter *getter, std::stri
 	return SyncUrlFetcher(GURL(url), getter, response).Fetch();
 }
 
+void ThreadPoolDemo()
+{
+	// 创建一个名为MyApp的线程池
+	base::TaskScheduler::CreateAndStartWithDefaultParams("MyApp");
+
+	for (int i = 0; i < 100; ++i)
+	{
+		auto task = base::BindOnce([]() {
+			std::cout << "taskscheduler run task at " << base::PlatformThread::CurrentId() << std::endl;
+		});
+
+		base::PostTask(FROM_HERE, std::move(task));
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
@@ -252,7 +270,9 @@ int main(int argc, char* argv[])
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
 
-	base::Thread io_thread("io thread");
+	ThreadPoolDemo();
+
+	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
 	CHECK(io_thread.StartWithOptions(options));
 
@@ -275,7 +295,7 @@ int main(int argc, char* argv[])
 	sysDemo.DoWork();
 
 	CThreadDemo threadDemo;
-	threadDemo.DoWork();
+	threadDemo.DoWork();*/
 
 	std::cout << "main exit" << std::endl;
 	system("Pause");
