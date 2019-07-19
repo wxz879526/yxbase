@@ -250,6 +250,9 @@ void ThreadPoolDemo()
 
 		base::PostTask(FROM_HERE, std::move(task));
 	}
+
+	if (base::TaskScheduler::GetInstance())
+		base::TaskScheduler::GetInstance()->Shutdown();
 }
 
 int main(int argc, char* argv[])
