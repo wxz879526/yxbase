@@ -6,8 +6,8 @@
 ### libcore库编译
 * 安装depot_tools(包含GN和Ninja工具)，修改compile.bat里面的depot_tools 路径
 * 添加环境变量 GYP_MSVS_OVERRIDE_PATH  指向vs2017的安装路径 C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise
-* 添加环境变量 WINDOWSSDKDIR 指向本地SDK路径 D:\Windows Kits\10
-* 运行compile.bat
+* 添加环境变量 WINDOWSSDKDIR 指向本地SDK路径 C:\Program Files (x86)\Windows Kits\10
+* 启动vs2017的command prompt(x86 Native Tools Command Prompt for VS 2017 32位的)命令行工具 运行compile.bat
 * 使用args.gn文件内的编译配置
 * 默认输出在out目录
 * vs命令行运行create_libcore_run_in_vs_cmd.bat脚本合并最终的libcore.lib

@@ -154,7 +154,8 @@ def DetectVisualStudioPath():
     for path in (
         os.environ.get('vs2017_install'),
         r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Professional',
-        r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community'):
+        r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community',
+        r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise'):
       if path and os.path.exists(path):
         return path
   else:
