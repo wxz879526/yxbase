@@ -324,6 +324,66 @@ private:
 	std::string result_;
 };
 
+static void SlowFunc(base::TimeDelta pause, int *quit_counter)
+{
+	base::PlatformThread::Sleep(pause);
+	if (--(*quit_counter) == 0)
+		base::MessageLoop::current()->QuitWhenIdle();
+}
+
+static void RecordRunTimeFunc(base::Time *run_time, int *quit_counter)
+{
+	*run_time = base::Time::Now();
+
+	SlowFunc(base::TimeDelta::FromMicroseconds(10), quit_counter);
+}
+
+void SumbPumpFunc()
+{
+	base::MessageLoop::current()->SetNestableTasksAllowed(true);
+
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0))
+	{
+		TranslateMessage(&msg);
+		DispatchMessage(&msg);
+	}
+
+	base::MessageLoop::current()->QuitWhenIdle();
+}
+
+void PostDelayedTask_SharedTimer_SubPump()
+{
+	base::MessageLoop loop(base::MessageLoop::TYPE_UI);
+
+	int num_tasks = 1;
+	base::Time run_time;
+
+	loop.task_runner()->PostTask(FROM_HERE, base::BindOnce(&SumbPumpFunc));
+
+	loop.task_runner()->PostDelayedTask(FROM_HERE,
+		base::BindOnce(&RecordRunTimeFunc, &run_time, &num_tasks),
+		base::TimeDelta::FromSeconds(1000));
+
+	loop.task_runner()->PostDelayedTask(FROM_HERE,
+		base::BindOnce(&PostQuitMessage, 0),
+		base::TimeDelta::FromSeconds(3));
+
+	base::Time start_time = base::Time::Now();
+
+	base::RunLoop().Run();
+
+	std::cout << "num_tasks: " << num_tasks << std::endl;
+
+	base::TimeDelta total_time = base::Time::Now() - start_time;
+	std::cout << "Elapse time delta: " << total_time << " milliseconds" << std::endl;
+
+	base::PlatformThread::Sleep(base::TimeDelta::FromMilliseconds(100));
+	base::RunLoop().RunUntilIdle();
+
+	std::cout << std::boolalpha << "run_time is null: " << run_time.is_null() << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
@@ -350,7 +410,9 @@ int main(int argc, char* argv[])
 
 	//MessageLoopAndTaskRunnerCompare();
 
-	MessageLoopTypeTest();
+	//MessageLoopTypeTest();
+
+	PostDelayedTask_SharedTimer_SubPump();
 
 	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
