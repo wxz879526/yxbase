@@ -272,6 +272,28 @@ void ThreadPoolDemo()
 		base::TaskScheduler::GetInstance()->Shutdown();
 }
 
+void MessageLoopAndTaskRunnerCompare()
+{
+	base::MessageLoop loop;
+	if (&loop == base::MessageLoop::current())
+	{
+		std::cout << "The same messageloop" << std::endl;
+	}
+	else
+	{
+		std::cout << "The different messageloop" << std::endl;
+	}
+
+	if (loop.task_runner() == base::ThreadTaskRunnerHandle::Get())
+	{
+		std::cout << "The same task runner" << std::endl;
+	}
+	else
+	{
+		std::cout << "The different task runner" << std::endl;
+	}
+}
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
@@ -294,7 +316,9 @@ int main(int argc, char* argv[])
 
 	//TaskDemo();
 
-	ThreadName();
+	//ThreadName();
+
+	MessageLoopAndTaskRunnerCompare();
 
 	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
