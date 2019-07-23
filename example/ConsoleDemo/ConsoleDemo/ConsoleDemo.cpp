@@ -49,6 +49,23 @@ int TaskDemo()
 	return  0;
 }
 
+void ThreadName()
+{
+	{
+		std::string kThreadName("foo");
+		base::MessageLoop loop;
+		base::PlatformThread::SetName(kThreadName);
+		std::cout << loop.GetThreadName() << std::endl;
+	}
+
+	{
+		std::string kThreadName("bar");
+		base::Thread thread(kThreadName);
+		thread.StartAndWaitForTesting();
+		std::cout << thread.message_loop()->GetThreadName() << std::endl;
+	}
+}
+
 class Foo {
 public:
 	virtual void Observe(int x) = 0;
@@ -273,7 +290,11 @@ int main(int argc, char* argv[])
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
 
-	ThreadPoolDemo();
+	//ThreadPoolDemo();
+
+	//TaskDemo();
+
+	ThreadName();
 
 	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
