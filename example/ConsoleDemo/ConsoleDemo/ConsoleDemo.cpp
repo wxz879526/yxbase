@@ -294,6 +294,36 @@ void MessageLoopAndTaskRunnerCompare()
 	}
 }
 
+void MessageLoopTypeTest()
+{
+	base::MessageLoop loop(base::MessageLoop::TYPE_UI);
+	std::cout << std::boolalpha << "the messageloop type is TYPE_UI: " << loop.IsType(base::MessageLoop::TYPE_UI) << std::endl;
+	std::cout << std::boolalpha << "the messageloop type is TYPE_DEFAULT: " << loop.IsType(base::MessageLoop::TYPE_DEFAULT) << std::endl;
+}
+
+class Foo1 : public base::RefCounted<Foo1>
+{
+public:
+	Foo1() : test_count_(0) {}
+
+	void Test1ConstRef(const std::string &a)
+	{
+		++test_count_;
+		result_.append(a);
+	}
+
+	int test_count() const { return test_count_; }
+	const std::string& result() { return result_; }
+
+private:
+	friend class base::RefCounted<Foo1>;
+
+	~Foo1(){}
+
+	int test_count_;
+	std::string result_;
+};
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
@@ -318,7 +348,9 @@ int main(int argc, char* argv[])
 
 	//ThreadName();
 
-	MessageLoopAndTaskRunnerCompare();
+	//MessageLoopAndTaskRunnerCompare();
+
+	MessageLoopTypeTest();
 
 	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
