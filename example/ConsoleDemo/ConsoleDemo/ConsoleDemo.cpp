@@ -26,6 +26,10 @@
 #include "base/threading/thread.h"
 #include "URLRequestContextGetter.h"
 
+#include "base/memory/ref_counted.h"
+#include "base/memory/ptr_util.h"
+#include "base/single_thread_task_runner.h"
+
 int TaskDemo()
 {
 	int duration_seconds = 0;
@@ -384,6 +388,204 @@ void PostDelayedTask_SharedTimer_SubPump()
 	std::cout << std::boolalpha << "run_time is null: " << run_time.is_null() << std::endl;
 }
 
+const wchar_t kMessageBoxTitle[] = L"MessageBox Unit Test";
+
+enum TaskType
+{
+	MESSAGEBOX,
+	ENDDIALOG,
+	RECURSIVE,
+	TIMEDMESSAGELOOP,
+	QUITMESSAGELOOP,
+	ORDERED,
+	PUMPS,
+	SLEEP,
+	RUNS
+};
+
+struct TaskItem 
+{
+	TaskItem(TaskType t, int c, bool s)
+		: type(t)
+		, cookie(c)
+		, start(s)
+	{
+
+	}
+
+	TaskType type;
+	int cookie;
+	bool start;
+
+	bool operator==(const TaskItem &other)
+	{
+		return type == other.type && cookie == other.cookie && start == other.start;
+	}
+};
+
+std::ostream& operator<<(std::ostream& os, TaskType type)
+{
+	switch (type)
+	{
+	case MESSAGEBOX: os << "MESSAGEBOX"; break;
+	case ENDDIALOG: os << "ENDDIALOG"; break;
+	case RECURSIVE: os << "RECURSIVE"; break;
+	case TIMEDMESSAGELOOP: os << "TIMEDMESSAGEBOX"; break;
+	case QUITMESSAGELOOP: os << "QUITMESSAGEBOX"; break;
+	case ORDERED: os << "ORDERED"; break;
+	case PUMPS: os << "PUMPS"; break;
+	case SLEEP: os << "SLEEP"; break;
+	case RUNS: os << "RUNS"; break;
+	default:
+		NOTREACHED();
+		os << "Unknown TaskType";
+		break;
+	}
+
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const TaskItem& item)
+{
+	if (item.start)
+		os << item.type << " " << item.cookie << " starts";
+	else
+		os << item.type << " " << item.cookie << " ends";
+
+	return os;
+}
+
+class TaskList
+{
+public:
+	void RecordStart(TaskType type, int cookie)
+	{
+		TaskItem item(type, cookie, true);
+		DVLOG(1) << item;
+		task_list_.push_back(item);
+	}
+
+	void RecordEnd(TaskType type, int cookie)
+	{
+		TaskItem item(type, cookie, false);
+		DVLOG(1) << item;
+		task_list_.push_back(item);
+	}
+
+	size_t Size()
+	{
+		return task_list_.size();
+	}
+
+	TaskItem Get(int n)
+	{
+		return task_list_[n];
+	}
+
+private:
+	std::vector<TaskItem> task_list_;
+};
+
+void MessageBoxFunc(TaskList* order, int cookie, bool is_reentrant)
+{
+	order->RecordStart(MESSAGEBOX, cookie);
+	if (is_reentrant)
+		base::MessageLoop::current()->SetNestableTasksAllowed(true);
+	MessageBox(NULL, L"Please wait...", kMessageBoxTitle, MB_OK);
+	order->RecordEnd(MESSAGEBOX, cookie);
+}
+
+void EndDialogFunc(TaskList* order, int cookie)
+{
+	order->RecordStart(ENDDIALOG, cookie);
+	HWND window = GetActiveWindow();
+	if (window != nullptr)
+	{
+		EndDialog(window, IDCONTINUE);
+		order->RecordEnd(ENDDIALOG, cookie);
+	}
+}
+
+void RecusiveFunc(TaskList* order, int cookie, int depth, bool is_reentrant)
+{
+	order->RecordStart(RECURSIVE, cookie);
+	if (depth > 0)
+	{
+		if (is_reentrant)
+			base::MessageLoop::current()->SetNestableTasksAllowed(true);
+		base::ThreadTaskRunnerHandle::Get()->PostTask(
+			FROM_HERE,
+			base::BindOnce(&RecusiveFunc, order, cookie, depth - 1, is_reentrant));
+	}
+	order->RecordEnd(RECURSIVE, cookie);
+}
+
+void QuitFunc(TaskList* order, int cookie)
+{
+	order->RecordStart(QUITMESSAGELOOP, cookie);
+	base::MessageLoop::current()->QuitWhenIdle();
+	order->RecordEnd(QUITMESSAGELOOP, cookie);
+}
+
+void RecursiveFuncWin(scoped_refptr<base::SingleThreadTaskRunner> task_runner,
+	HANDLE event,
+	bool expected_window,
+	TaskList *order,
+	bool is_reentrant)
+{
+	task_runner->PostTask(FROM_HERE,
+		base::BindOnce(&RecusiveFunc, order, 1, 2, is_reentrant));
+	task_runner->PostTask(FROM_HERE,
+		base::BindOnce(&MessageBoxFunc, order, 2, is_reentrant));
+	task_runner->PostTask(FROM_HERE,
+		base::BindOnce(&RecusiveFunc, order, 3, 2, is_reentrant));
+	task_runner->PostTask(FROM_HERE,
+		base::BindOnce(&EndDialogFunc, order, 4));
+	task_runner->PostTask(FROM_HERE, base::BindOnce(&QuitFunc, order, 5));
+
+	SetEvent(event);
+
+	for (; expected_window; )
+	{
+		HWND window = FindWindow(L"#32770", kMessageBoxTitle);
+		if (window)
+		{
+			for (;;)
+			{
+				HWND button = FindWindowEx(window, NULL, L"Button", NULL);
+				if (button)
+				{
+					SendMessage(button, WM_LBUTTONDOWN, 0, 0);
+					SendMessage(button, WM_LBUTTONUP, 0, 0);
+					break;
+				}
+			}
+			break;
+		}
+	}
+}
+
+void RunTest_RecursiveDenial2(base::MessageLoop::Type message_loop_type)
+{
+	base::MessageLoop loop(message_loop_type);
+
+	base::Thread worker("RecursiveDenial2_worker");
+	base::Thread::Options options;
+	options.message_loop_type = message_loop_type;
+	worker.StartWithOptions(options);
+	TaskList order;
+	base::win::ScopedHandle event(CreateEvent(NULL, FALSE, FALSE, NULL));
+	worker.task_runner()->PostTask(FROM_HERE,
+		base::BindOnce(&RecursiveFuncWin, base::ThreadTaskRunnerHandle::Get(),
+			event.Get(), true, &order, false));
+	WaitForSingleObject(event.Get(), INFINITE);
+	base::RunLoop().Run();
+
+	std::cout << "order.Size() " << order.Size() << std::endl; //17
+	std::cout << "order.Get(0) " << order.Get(0) << std::endl;
+	std::cout << "order.Get(0) " << order.Get(1) << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
@@ -412,7 +614,11 @@ int main(int argc, char* argv[])
 
 	//MessageLoopTypeTest();
 
-	PostDelayedTask_SharedTimer_SubPump();
+	//PostDelayedTask_SharedTimer_SubPump();
+
+	RunTest_RecursiveDenial2(base::MessageLoop::TYPE_DEFAULT);
+	//RunTest_RecursiveDenial2(MessageLoop::TYPE_UI);
+	//RunTest_RecursiveDenial2(MessageLoop::TYPE_IO);
 
 	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
