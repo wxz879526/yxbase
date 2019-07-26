@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include <iostream>
+#include <windows.h>
 
 #include "base/at_exit.h"
 #include "base/strings/string_number_conversions.h"
@@ -29,6 +30,8 @@
 #include "base/memory/ref_counted.h"
 #include "base/memory/ptr_util.h"
 #include "base/single_thread_task_runner.h"
+
+#include "base/win/current_module.h"
 
 int TaskDemo()
 {
@@ -586,11 +589,102 @@ void RunTest_RecursiveDenial2(base::MessageLoop::Type message_loop_type)
 	std::cout << "order.Get(0) " << order.Get(1) << std::endl;
 }
 
+void EmptyFunction(){}
+
+void PostMultipleTasks()
+{
+	base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE,
+		base::BindOnce(&EmptyFunction));
+
+	base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE,
+		base::BindOnce(&EmptyFunction));
+}
+
+static const int kSignalMsg = WM_USER + 2;
+
+void PostWindowsMessage(HWND message_hwnd)
+{
+	PostMessage(message_hwnd, kSignalMsg, 0, 2);
+}
+
+void EndTest(bool *did_run, HWND hwnd)
+{
+	*did_run = true;
+	PostMessage(hwnd, WM_CLOSE, 0, 0);
+}
+
+int kMyMessageFilterCode = 0x5002;
+
+LRESULT CALLBACK TestWndProcThunk(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == WM_CLOSE)
+		DestroyWindow(hwnd);
+
+	if (uMsg != kSignalMsg)
+		return DefWindowProc(hwnd, uMsg, wParam, lParam);
+
+	bool did_run = false;
+	switch (lParam)
+	{
+	case 1:
+		base::ThreadTaskRunnerHandle::Get()->PostTask(
+			FROM_HERE,
+			base::BindOnce(&PostMultipleTasks));
+		base::ThreadTaskRunnerHandle::Get()->PostTask(
+			FROM_HERE,
+			base::BindOnce(&PostWindowsMessage, hwnd));
+		break;
+	case 2:
+		base::MessageLoop::current()->SetNestableTasksAllowed(true);
+		base::ThreadTaskRunnerHandle::Get()->PostTask(
+			FROM_HERE,
+			base::BindOnce([]() {
+			std::cout << "xxxxxxxxxxxxx" << std::endl; }));
+		base::ThreadTaskRunnerHandle::Get()->PostTask(
+			FROM_HERE,
+			base::BindOnce(&EndTest, &did_run, hwnd));
+
+		MSG msg;
+		while (GetMessage(&msg, 0, 0, 0))
+		{
+			if (!CallMsgFilter(&msg, kMyMessageFilterCode))
+				DispatchMessage(&msg);
+
+			if (msg.message == WM_CLOSE)
+				break;
+		}
+		base::MessageLoop::current()->QuitWhenIdle();
+		break;
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+void AlwaysHaveUserMessageWhenNesting()
+{
+	base::MessageLoop loop(base::MessageLoop::TYPE_UI);
+	HINSTANCE instance = CURRENT_MODULE();
+	WNDCLASSEX wc = { 0 };
+	wc.cbSize = sizeof(wc);
+	wc.lpfnWndProc = TestWndProcThunk;
+	wc.hInstance = instance;
+	wc.lpszClassName = L"MessageLoopTest_HWND";
+	ATOM atom = RegisterClassEx(&wc);
+
+	HWND message_hwnd = CreateWindow(MAKEINTATOM(atom),
+		0, 0, 0, 0, 0, 0, HWND_MESSAGE, 0, instance, 0);
+	PostMessage(message_hwnd, kSignalMsg, 0, 1);
+	base::RunLoop().Run();
+	UnregisterClass(MAKEINTATOM(atom), instance);
+}
+
 int main(int argc, char* argv[])
 {
 	base::CommandLine::Init(argc, argv);
 	base::AtExitManager exit_manager;
-
+	
 	logging::LoggingSettings settings;
 	settings.log_file = L"example.log";
 	bool success = logging::InitLogging(settings);
@@ -616,9 +710,11 @@ int main(int argc, char* argv[])
 
 	//PostDelayedTask_SharedTimer_SubPump();
 
-	RunTest_RecursiveDenial2(base::MessageLoop::TYPE_DEFAULT);
+	//RunTest_RecursiveDenial2(base::MessageLoop::TYPE_DEFAULT);
 	//RunTest_RecursiveDenial2(MessageLoop::TYPE_UI);
 	//RunTest_RecursiveDenial2(MessageLoop::TYPE_IO);
+
+	AlwaysHaveUserMessageWhenNesting();
 
 	/*base::Thread io_thread("io thread");
 	base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
