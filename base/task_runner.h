@@ -78,7 +78,7 @@ class BASE_EXPORT TaskRunner
     return RunsTasksInCurrentSequence();
   }
 
-  // Returns true iff tasks posted to this TaskRunner are sequenced
+  // Returns true if tasks posted to this TaskRunner are sequenced
   // with this call.
   //
   // In particular:

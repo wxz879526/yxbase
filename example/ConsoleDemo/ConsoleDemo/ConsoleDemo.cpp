@@ -32,9 +32,25 @@
 #include "base/single_thread_task_runner.h"
 
 #include "base/win/current_module.h"
+#include "base/cancelable_callback.h"
+
+#include "thread_local_test.h"
 
 int TaskDemo()
 {
+	base::MessageLoop loop;
+
+	base::CancelableClosure cancelable(base::Bind([]() {
+		std::cout << "CancelableClosure run!!!" << std::endl;
+	}));
+
+	base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE, cancelable.callback());
+	base::RunLoop().RunUntilIdle();
+
+	base::ThreadTaskRunnerHandle::Get()->PostTask(FROM_HERE, cancelable.callback());
+	cancelable.Cancel();
+	base::RunLoop().RunUntilIdle();
+
 	int duration_seconds = 0;
 	if (!base::StringToInt("10", &duration_seconds))
 	{
@@ -50,7 +66,7 @@ int TaskDemo()
 	base::MessageLoop main_loop;
 	base::RunLoop run_loop;
 	main_loop.task_runner()->PostDelayedTask(FROM_HERE, std::move(task), duration);
-	main_loop.task_runner()->PostDelayedTask(FROM_HERE, run_loop.QuitClosure(), duration);
+	//main_loop.task_runner()->PostDelayedTask(FROM_HERE, run_loop.QuitClosure(), duration);
 	run_loop.Run();
 
 	return  0;
@@ -368,6 +384,12 @@ void PostDelayedTask_SharedTimer_SubPump()
 
 	loop.task_runner()->PostTask(FROM_HERE, base::BindOnce(&SumbPumpFunc));
 
+	auto callBack = base::BindOnce([]() {
+		std::cout << "Hello World" << std::endl;
+	});
+
+	loop.task_runner()->PostTask(FROM_HERE, std::move(callBack));
+
 	loop.task_runner()->PostDelayedTask(FROM_HERE,
 		base::BindOnce(&RecordRunTimeFunc, &run_time, &num_tasks),
 		base::TimeDelta::FromSeconds(1000));
@@ -536,19 +558,24 @@ void RecursiveFuncWin(scoped_refptr<base::SingleThreadTaskRunner> task_runner,
 	TaskList *order,
 	bool is_reentrant)
 {
-	task_runner->PostTask(FROM_HERE,
-		base::BindOnce(&RecusiveFunc, order, 1, 2, is_reentrant));
+	//task_runner->PostTask(FROM_HERE,
+		//base::BindOnce(&RecusiveFunc, order, 1, 2, is_reentrant));
 	task_runner->PostTask(FROM_HERE,
 		base::BindOnce(&MessageBoxFunc, order, 2, is_reentrant));
-	task_runner->PostTask(FROM_HERE,
-		base::BindOnce(&RecusiveFunc, order, 3, 2, is_reentrant));
-	task_runner->PostTask(FROM_HERE,
-		base::BindOnce(&EndDialogFunc, order, 4));
-	task_runner->PostTask(FROM_HERE, base::BindOnce(&QuitFunc, order, 5));
+	task_runner->PostTask(FROM_HERE, base::BindOnce([]() {
+		std::cout << "Task Pending." << std::endl;
+		std::cout << "Task Pending.." << std::endl;
+		std::cout << "Task Pending..." << std::endl;
+	}));
+	//task_runner->PostTask(FROM_HERE,
+		//base::BindOnce(&RecusiveFunc, order, 3, 2, is_reentrant));
+	//task_runner->PostTask(FROM_HERE,
+		//base::BindOnce(&EndDialogFunc, order, 4));
+	//task_runner->PostTask(FROM_HERE, base::BindOnce(&QuitFunc, order, 5));
 
 	SetEvent(event);
 
-	for (; expected_window; )
+	/*for (; expected_window; )
 	{
 		HWND window = FindWindow(L"#32770", kMessageBoxTitle);
 		if (window)
@@ -565,12 +592,13 @@ void RecursiveFuncWin(scoped_refptr<base::SingleThreadTaskRunner> task_runner,
 			}
 			break;
 		}
-	}
+	}*/
 }
 
 void RunTest_RecursiveDenial2(base::MessageLoop::Type message_loop_type)
 {
 	base::MessageLoop loop(message_loop_type);
+	base::MessageLoop::current()->SetNestableTasksAllowed(true);
 
 	base::Thread worker("RecursiveDenial2_worker");
 	base::Thread::Options options;
@@ -580,7 +608,7 @@ void RunTest_RecursiveDenial2(base::MessageLoop::Type message_loop_type)
 	base::win::ScopedHandle event(CreateEvent(NULL, FALSE, FALSE, NULL));
 	worker.task_runner()->PostTask(FROM_HERE,
 		base::BindOnce(&RecursiveFuncWin, base::ThreadTaskRunnerHandle::Get(),
-			event.Get(), true, &order, false));
+			event.Get(), true, &order, true));
 	WaitForSingleObject(event.Get(), INFINITE);
 	base::RunLoop().Run();
 
@@ -680,8 +708,36 @@ void AlwaysHaveUserMessageWhenNesting()
 	UnregisterClass(MAKEINTATOM(atom), instance);
 }
 
+class CA
+{
+public:
+	virtual void Print() {
+		int x = 0;
+	}
+};
+
+class CB : virtual public CA
+{
+};
+
+class CC : virtual public CA
+{
+public:
+	virtual void Print() override {
+		int x = 2;
+	}
+};
+
+class CD : public CB, public CC
+{
+};
+
 int main(int argc, char* argv[])
 {
+	ThreadLocalTest();
+
+	CD d;
+	d.Print();
 	base::CommandLine::Init(argc, argv);
 	base::AtExitManager exit_manager;
 	
@@ -698,6 +754,9 @@ int main(int argc, char* argv[])
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
 
+	CThreadDemo threadDemo;
+	threadDemo.DoWork();
+
 	//ThreadPoolDemo();
 
 	//TaskDemo();
@@ -710,7 +769,8 @@ int main(int argc, char* argv[])
 
 	//PostDelayedTask_SharedTimer_SubPump();
 
-	//RunTest_RecursiveDenial2(base::MessageLoop::TYPE_DEFAULT);
+	RunTest_RecursiveDenial2(base::MessageLoop::TYPE_UI);
+
 	//RunTest_RecursiveDenial2(MessageLoop::TYPE_UI);
 	//RunTest_RecursiveDenial2(MessageLoop::TYPE_IO);
 

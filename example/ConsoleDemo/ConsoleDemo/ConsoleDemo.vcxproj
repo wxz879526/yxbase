@@ -93,6 +93,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>..\..\..\;..\..\..\out\gen;..\..\..\third_party\googletest\src\googletest\include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4250</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -206,6 +207,8 @@ ws2_32.lib;Powrprof.lib;Setupapi.lib;%(AdditionalDependencies)</AdditionalDepend
     <ClInclude Include="CSystemInfoDemo.h" />
     <ClInclude Include="CThreadDemo.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="thread_local_test.h" />
     <ClInclude Include="URLRequestContextGetter.h" />
   </ItemGroup>
   <ItemGroup>
@@ -221,6 +224,9 @@ ws2_32.lib;Powrprof.lib;Setupapi.lib;%(AdditionalDependencies)</AdditionalDepend
     </ClCompile>
     <ClCompile Include="power_monitor_unittest.cc" />
     <ClCompile Include="URLRequestContextGetter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="ConsoleDemo.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

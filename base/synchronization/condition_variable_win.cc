@@ -71,7 +71,7 @@ class ConditionVarImpl {
 // Windows Vista and Win7 implementation.
 ///////////////////////////////////////////////////////////////////////////////
 
-class WinVistaCondVar: public ConditionVarImpl {
+class WinVistaCondVar : public ConditionVarImpl {
  public:
   WinVistaCondVar(Lock* user_lock);
   ~WinVistaCondVar() override {}

@@ -84,7 +84,7 @@ int main(int argc, const char* const* argv) {
   std::cout << "url response:" << response << std::endl;
 
   while (1) {
-    Sleep(1000);
+    Sleep(30000);
   }
   
   system("pause");
