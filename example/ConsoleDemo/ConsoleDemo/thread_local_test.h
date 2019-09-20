@@ -84,3 +84,37 @@ void ThreadLocalTest()
 	tlb.Set(true);
 	auto bTrue = tlb.Get();
 }
+
+void ThreadLocalTest2()
+{
+	base::DelegateSimpleThreadPool tp1("ThreadLocalTest1", 1);
+	base::DelegateSimpleThreadPool tp2("ThreadLocalTest2", 1);
+	tp1.Start();
+	tp2.Start();
+
+	base::ThreadLocalPointer<char> tlp;
+
+	static char* const kBogusPointer = reinterpret_cast<char*>(0x1234);
+
+	char *tls_val;
+	base::WaitableEvent done(base::WaitableEvent::ResetPolicy::MANUAL,
+		base::WaitableEvent::InitialState::NOT_SIGNALED);
+
+	GetThreadLocal getter(&tlp, &done);
+	getter.set_ptr(&tls_val);
+
+	tls_val = kBogusPointer;
+	done.Reset();
+	tp1.AddWork(&getter);
+	done.Wait();
+	auto bTrue = (tls_val == nullptr);
+
+	tls_val = kBogusPointer;
+	done.Reset();
+	tp2.AddWork(&getter);
+	done.Wait();
+	bTrue = (tls_val == nullptr);
+
+	tp1.JoinAll();
+	tp2.JoinAll();
+}

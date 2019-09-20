@@ -734,7 +734,7 @@ class CD : public CB, public CC
 
 int main(int argc, char* argv[])
 {
-	ThreadLocalTest();
+	ThreadLocalTest2();
 
 	CD d;
 	d.Print();
