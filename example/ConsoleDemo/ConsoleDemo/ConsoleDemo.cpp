@@ -708,36 +708,11 @@ void AlwaysHaveUserMessageWhenNesting()
 	UnregisterClass(MAKEINTATOM(atom), instance);
 }
 
-class CA
-{
-public:
-	virtual void Print() {
-		int x = 0;
-	}
-};
-
-class CB : virtual public CA
-{
-};
-
-class CC : virtual public CA
-{
-public:
-	virtual void Print() override {
-		int x = 2;
-	}
-};
-
-class CD : public CB, public CC
-{
-};
-
 int main(int argc, char* argv[])
 {
+	
 	ThreadLocalTest2();
 
-	CD d;
-	d.Print();
 	base::CommandLine::Init(argc, argv);
 	base::AtExitManager exit_manager;
 	
