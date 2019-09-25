@@ -36,6 +36,8 @@
 
 #include "thread_local_test.h"
 
+#include "WebSocketServer.h"
+
 int TaskDemo()
 {
 	base::MessageLoop loop;
@@ -710,9 +712,6 @@ void AlwaysHaveUserMessageWhenNesting()
 
 int main(int argc, char* argv[])
 {
-	
-	ThreadLocalTest2();
-
 	base::CommandLine::Init(argc, argv);
 	base::AtExitManager exit_manager;
 	
@@ -728,6 +727,11 @@ int main(int argc, char* argv[])
 	LOG(INFO) << "info.log";
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
+
+	WebSocketServer server;
+	auto bRet = server.Start();
+	Sleep(25000);
+	server.Stop();
 
 	CThreadDemo threadDemo;
 	threadDemo.DoWork();

@@ -115,6 +115,35 @@ void ThreadLocalTest2()
 	done.Wait();
 	bTrue = (tls_val == nullptr);
 
+	SetThreadLocal setter(&tlp, &done);
+	setter.set_value(kBogusPointer);
+	done.Reset();
+	tp1.AddWork(&setter);
+	done.Wait();
+
+	tls_val = nullptr;
+	done.Reset();
+	tp1.AddWork(&getter);
+	done.Wait();
+	bool b1 = (kBogusPointer == tls_val);
+
+	setter.set_value(kBogusPointer + 1);
+	done.Reset();
+	tp2.AddWork(&setter);
+	done.Wait();
+
+	tls_val = nullptr;
+	done.Reset();
+	tp2.AddWork(&getter);
+	done.Wait();
+	bool b2 = (kBogusPointer + 1 == tls_val);
+
+	tls_val = nullptr;
+	done.Reset();
+	tp1.AddWork(&getter);
+	done.Wait();
+	bool b3 = (kBogusPointer == tls_val);
+
 	tp1.JoinAll();
 	tp2.JoinAll();
 }

@@ -210,6 +210,7 @@ ws2_32.lib;Powrprof.lib;Setupapi.lib;%(AdditionalDependencies)</AdditionalDepend
     <ClInclude Include="resource.h" />
     <ClInclude Include="thread_local_test.h" />
     <ClInclude Include="URLRequestContextGetter.h" />
+    <ClInclude Include="WebSocketServer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConsoleDemo.cpp" />
