@@ -38,6 +38,8 @@
 
 #include "WebSocketServer.h"
 
+#include "Sqlite3Test.h"
+
 int TaskDemo()
 {
 	base::MessageLoop loop;
@@ -727,6 +729,9 @@ int main(int argc, char* argv[])
 	LOG(INFO) << "info.log";
 	LOG(ERROR) << "error.log";
 	LOG(WARNING) << "warning.log";
+
+	CSqlite3Demo sqlite3Demo;
+	int colN = sqlite3Demo.RecordRows();
 
 	WebSocketServer server;
 	auto bRet = server.Start();
